@@ -1,43 +1,28 @@
-import React from 'react';
-import Travelly from '../img/travelly.jpg';
+import React, { memo } from 'react';
+import DefaultImage from '../img/travelly.jpg';
 
-const GalleryItems = props => {
-    const { galleryItems, currentFilter } = props;
+const GalleryItems = memo(props => {
+    const { galleryItems, minComments } = props;
 
-    const sortItems = () => {
-        return galleryItems.sort((a, b) => {
-            if (a.data.num_comments < b.data.num_comments) {
-                return 1;
-            }
-            if (a.data.num_comments > b.data.num_comments) {
-                return -1;
-            }
-            return 0;
-        });
-    };
+    const getItemsByComments = (items, minComments) =>
+        items
+            .filter(item => item.data.num_comments >= minComments)
+            .sort((a, b) => b.data.num_comments - a.data.num_comments);
 
-    const filterItems = () => {
-        const sortedData = sortItems();
-
-        return sortedData.filter(
-            item => item.data.num_comments >= currentFilter
-        );
-    };
-
-    const filteredData = filterItems();
+    const itemsByComments = getItemsByComments(galleryItems, minComments);
 
     return (
         <>
-            {filteredData.length > 0 ? (
+            {itemsByComments.length > 0 ? (
                 <div className="gallery__grid">
-                    {filteredData.map((item, index) => (
-                        <div key={index} className="gallery__item">
+                    {itemsByComments.map(item => (
+                        <div key={item.data.id} className="gallery__item">
                             {' '}
                             <img
                                 className="gallery__image"
                                 src={
                                     item.data.thumbnail === 'self'
-                                        ? Travelly
+                                        ? DefaultImage
                                         : item.data.thumbnail
                                 }
                                 alt=""
@@ -50,6 +35,8 @@ const GalleryItems = props => {
                             </p>
                             <a
                                 href={`https://www.reddit.com${item.data.permalink}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="gallery__link"
                             >
                                 Link
@@ -64,6 +51,6 @@ const GalleryItems = props => {
             )}
         </>
     );
-};
+});
 
 export default GalleryItems;
