@@ -1,10 +1,7 @@
 import React from 'react';
-import Slider from './Slider';
 import GalleryItems from './GalleryItems';
-import UpdateButton from './UpdateButton';
 
-const API_LINK =
-    'https://www.reddit.com/r/reactjs.json?limit=7&sort=num_comments';
+const API_LINK = 'https://www.reddit.com/r/reactjs.json?limit=100';
 
 export class App extends React.Component {
     constructor() {
@@ -12,9 +9,9 @@ export class App extends React.Component {
 
         this.state = {
             galleryItems: [],
-            isLoading: true,
-            update: false,
-            currentFilter: 0
+            isLoading: false,
+            enableAutoRefresh: false,
+            minComments: 0
         };
     }
 
@@ -23,6 +20,9 @@ export class App extends React.Component {
     }
 
     getData() {
+        this.setState({
+            isLoading: true
+        });
         fetch(API_LINK)
             .then(response => response.json())
             .then(result => {
@@ -30,35 +30,38 @@ export class App extends React.Component {
                     galleryItems: result.data.children,
                     isLoading: false
                 });
-
-                console.log(
-                    this.state.galleryItems.map(item => item.data.title)
-                );
             })
             .catch(error => console.log(error));
     }
 
-    onChange = event => {
-        const { name, value } = event.target;
+    updateMinComments = event => {
         this.setState({
-            [name]: value
+            minComments: Number(event.target.value)
         });
     };
 
-    startRefresh = () => {
-        this.setState({
-            update: true
-        });
-        this.timerId = setInterval(() => this.getData(), 3000);
-    };
-
-    stopRefresh = () => {
-        this.setState({ update: false });
-        clearInterval(this.timerId);
+    updateAutoRefresh = () => {
+        this.setState(
+            state => ({
+                enableAutoRefresh: !state.enableAutoRefresh
+            }),
+            () => {
+                if (this.state.enableAutoRefresh) {
+                    this.autoRefresh = setInterval(() => this.getData(), 3000);
+                } else {
+                    clearInterval(this.autoRefresh);
+                }
+            }
+        );
     };
 
     render() {
-        const { currentFilter, galleryItems, update, isLoading } = this.state;
+        const {
+            minComments,
+            galleryItems,
+            enableAutoRefresh,
+            isLoading
+        } = this.state;
 
         return (
             <section className="gallery">
@@ -69,24 +72,36 @@ export class App extends React.Component {
                         <h1 className="gallery__heading">Top commented.</h1>
                         <div className="gallery__subheading-box">
                             <h2 className="gallery__subheading">
-                                Current filter: {currentFilter}
+                                Current filter: {minComments}
                             </h2>
 
-                            <UpdateButton
-                                update={update}
-                                startRefresh={this.startRefresh}
-                                stopRefresh={this.stopRefresh}
+                            <button
+                                className="gallery__button"
+                                type="button"
+                                onClick={this.updateAutoRefresh}
+                            >
+                                {!enableAutoRefresh ? 'Start' : 'Stop'}{' '}
+                                auto-refresh
+                            </button>
+                        </div>
+
+                        <div className="gallery__slidecontainer">
+                            <input
+                                type="range"
+                                min="0"
+                                max="2000"
+                                step="1"
+                                value={minComments}
+                                className="slider"
+                                id="slider"
+                                name="minComments"
+                                onChange={this.updateMinComments}
                             />
                         </div>
 
-                        <Slider
-                            value={currentFilter}
-                            onChange={this.onChange}
-                        />
-
                         <GalleryItems
                             galleryItems={galleryItems}
-                            currentFilter={currentFilter}
+                            minComments={minComments}
                         />
                     </>
                 )}
